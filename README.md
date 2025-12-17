@@ -13,7 +13,8 @@ The code is written from scratch, but has a lot of AI generated pieces. Otherwis
 
 ##  BUILD
 RDX folder contains the Arduino IDE project.
-!IMPORTANT! Upload `/data` folder with patches, otherwise you won't hear anything worth.
+
+**!IMPORTANT!** Upload `/data` folder with patches to the ESP board, otherwise you won't hear anything worth.
 refer to `config.h` to see pins and edit settings
 
 ```
