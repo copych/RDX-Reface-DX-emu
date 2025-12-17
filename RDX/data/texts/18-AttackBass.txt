@@ -1,0 +1,54 @@
+VOICE NAME     = AttackBass
+============================
+TRANSPOSE      =      -12
+MONO/POLY      =     Poly
+PORTA TIME     =        0
+PB RANGE       =        2
+ALGORITHM      =        4
+LFO WAVE       =     Sine
+LFO SPEED      =       82
+LFO DELAY      =        0
+LFO PMD        =        0
+PEG RATE 1     =       64
+PEG RATE 2     =       64
+PEG RATE 3     =       64
+PEG RATE 4     =       64
+PEG LEVL 1     =        0
+PEG LEVL 2     =        0
+PEG LEVL 3     =        0
+PEG LEVL 4     =        0
+FX1 TYPE       =        0 (Thru)
+FX1 PARAM 1    =       64 (---)
+FX1 PARAM 2    =       64 (---)
+FX2 TYPE       =        0 (Thru)
+FX2 PARAM 1    =       64 (---)
+FX2 PARAM 2    =       64 (---)
+
+                      OP1      OP2      OP3      OP4     
+----------------------------------------------------
+OP Off/On      =       On       On       On       On
+EG RATE 1      =      127      127      127      127
+EG RATE 2      =       71       48      103       98
+EG RATE 3      =       48       40       50       85
+EG RATE 4      =      111       90       90       90
+EG LEVEL 1     =      127      127      127      127
+EG LEVEL 2     =       86       71       96      102
+EG LEVEL 3     =        0        0        0        0
+EG LEVEL 4     =        0        0        0        0
+RATE SCALING   =        4        4       10       18
+SCALING LD     =        0        0        0        0
+SCALING RD     =        0        6       11       16
+SCALING LC     =     -LIN     -LIN     -LIN     -LIN
+SCALING RC     =     -LIN     -LIN     -LIN     -LIN
+LFO AMD        =        0        0        0        0
+LFO PMD        =       On       On       On       On
+PEG Off/On     =       On       On       On       On
+VELO SENS      =       15       72       84      119
+OUT LEVEL      =      120      102       76       82
+FEEDBACK       =        0        0        0       31
+FB TYPE        = Sawtooth Sawtooth Sawtooth Sawtooth
+FREQ MODE      =    Ratio    Ratio    Ratio    Ratio
+RATIO | FREQ   =      0.5      0.5      4.5      9.0
+   freq coarse =        0        0        4        9
+   freq fine   =        0        0       50        0
+FREQ DETUNE    =        0        0        0        0

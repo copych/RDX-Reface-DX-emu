@@ -1,0 +1,54 @@
+VOICE NAME     = AlTiPad   
+============================
+TRANSPOSE      =        0
+MONO/POLY      =     Poly
+PORTA TIME     =        0
+PB RANGE       =        2
+ALGORITHM      =        8
+LFO WAVE       =     Sine
+LFO SPEED      =       70
+LFO DELAY      =        0
+LFO PMD        =        0
+PEG RATE 1     =       64
+PEG RATE 2     =       64
+PEG RATE 3     =       64
+PEG RATE 4     =       64
+PEG LEVL 1     =        0
+PEG LEVL 2     =        0
+PEG LEVL 3     =        0
+PEG LEVL 4     =        0
+FX1 TYPE       =        3 (Chorus)
+FX1 PARAM 1    =       54 (Depth)
+FX1 PARAM 2    =       37 (Rate)
+FX2 TYPE       =        7 (Reverb)
+FX2 PARAM 1    =       70 (Depth)
+FX2 PARAM 2    =      110 (Time)
+
+                      OP1      OP2      OP3      OP4     
+----------------------------------------------------
+OP Off/On      =       On       On       On       On
+EG RATE 1      =       65       96       62       97
+EG RATE 2      =       52      100       70       76
+EG RATE 3      =       40       75       70       44
+EG RATE 4      =       60       41       60       58
+EG LEVEL 1     =      127      127      127      127
+EG LEVEL 2     =      105       90      115      115
+EG LEVEL 3     =        0       20      110       81
+EG LEVEL 4     =        0        0        0        0
+RATE SCALING   =       80        0        0        0
+SCALING LD     =       30       15       30        0
+SCALING RD     =       30       30       16       13
+SCALING LC     =     +LIN     +LIN     +LIN     +LIN
+SCALING RC     =     -LIN     -LIN     -LIN     -LIN
+LFO AMD        =        0        0        0        0
+LFO PMD        =      Off       On      Off       On
+PEG Off/On     =       On       On       On       On
+VELO SENS      =       20       20       20        0
+OUT LEVEL      =      122       82      122       82
+FEEDBACK       =       37        0       62        6
+FB TYPE        = Sawtooth Sawtooth Sawtooth Sawtooth
+FREQ MODE      =    Ratio    Ratio    Ratio    Ratio
+RATIO | FREQ   =      2.0     1.25      0.5    0.995
+   freq coarse =        2        1        0        0
+   freq fine   =        0       25        0       99
+FREQ DETUNE    =        0        0      -18        0

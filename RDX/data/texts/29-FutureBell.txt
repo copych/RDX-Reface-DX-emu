@@ -1,0 +1,54 @@
+VOICE NAME     = FutureBell
+============================
+TRANSPOSE      =      -12
+MONO/POLY      =     Poly
+PORTA TIME     =        0
+PB RANGE       =        2
+ALGORITHM      =        8
+LFO WAVE       =     Sine
+LFO SPEED      =       70
+LFO DELAY      =        0
+LFO PMD        =        0
+PEG RATE 1     =       64
+PEG RATE 2     =       64
+PEG RATE 3     =       64
+PEG RATE 4     =       64
+PEG LEVL 1     =        0
+PEG LEVL 2     =        0
+PEG LEVL 3     =        0
+PEG LEVL 4     =        0
+FX1 TYPE       =        3 (Chorus)
+FX1 PARAM 1    =      100 (Depth)
+FX1 PARAM 2    =       36 (Rate)
+FX2 TYPE       =        7 (Reverb)
+FX2 PARAM 1    =       64 (Depth)
+FX2 PARAM 2    =       64 (Time)
+
+                      OP1      OP2      OP3      OP4     
+----------------------------------------------------
+OP Off/On      =       On       On       On       On
+EG RATE 1      =      127      127      127      127
+EG RATE 2      =       50       50       50       50
+EG RATE 3      =       48       50       48       40
+EG RATE 4      =       50       50       50       40
+EG LEVEL 1     =      127      127      127      127
+EG LEVEL 2     =      110      100      110      100
+EG LEVEL 3     =        0        0        0        0
+EG LEVEL 4     =        0        0        0        0
+RATE SCALING   =        0        0        0       53
+SCALING LD     =        0        0       30       13
+SCALING RD     =        0        0        0        0
+SCALING LC     =     -LIN     +LIN     +LIN     +LIN
+SCALING RC     =     +LIN     -LIN     -LIN     -LIN
+LFO AMD        =        0        0        0        0
+LFO PMD        =       On       On       On       On
+PEG Off/On     =       On       On       On       On
+VELO SENS      =       20        0       20        0
+OUT LEVEL      =      103       79      110       78
+FEEDBACK       =        0        0        0       40
+FB TYPE        = Sawtooth Sawtooth Sawtooth   Square
+FREQ MODE      =    Ratio    Ratio    Ratio    Ratio
+RATIO | FREQ   =      1.0      5.0      6.0      3.0
+   freq coarse =        1        5        6        3
+   freq fine   =        0        0        0        0
+FREQ DETUNE    =        0        0        0        0

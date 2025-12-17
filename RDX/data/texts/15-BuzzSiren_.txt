@@ -1,0 +1,54 @@
+VOICE NAME     = BuzzSiren 
+============================
+TRANSPOSE      =        0
+MONO/POLY      =     Poly
+PORTA TIME     =        0
+PB RANGE       =       12
+ALGORITHM      =        8
+LFO WAVE       = Sawtooth Up
+LFO SPEED      =      127
+LFO DELAY      =       69
+LFO PMD        =       12
+PEG RATE 1     =       50
+PEG RATE 2     =       64
+PEG RATE 3     =       45
+PEG RATE 4     =        6
+PEG LEVL 1     =        0
+PEG LEVL 2     =        0
+PEG LEVL 3     =      -12
+PEG LEVL 4     =      -48
+FX1 TYPE       =        1 (Distortion)
+FX1 PARAM 1    =       64 (Drive)
+FX1 PARAM 2    =       49 (Tone)
+FX2 TYPE       =        7 (Reverb)
+FX2 PARAM 1    =       33 (Depth)
+FX2 PARAM 2    =       93 (Time)
+
+                      OP1      OP2      OP3      OP4     
+----------------------------------------------------
+OP Off/On      =       On       On       On       On
+EG RATE 1      =      127       15      127      127
+EG RATE 2      =      127      127      127      127
+EG RATE 3      =       40      127      127      127
+EG RATE 4      =       91      118       77        9
+EG LEVEL 1     =      127       57      127      127
+EG LEVEL 2     =      110      127      127      127
+EG LEVEL 3     =       80      127      127      127
+EG LEVEL 4     =        0        0        0        0
+RATE SCALING   =        0        0        0        0
+SCALING LD     =        0        0      127        0
+SCALING RD     =       14        0       20      127
+SCALING LC     =     -LIN     +LIN     -LIN     -LIN
+SCALING RC     =     -LIN     -LIN     -LIN     -LIN
+LFO AMD        =        0        0       19        0
+LFO PMD        =       On      Off      Off      Off
+PEG Off/On     =       On      Off      Off      Off
+VELO SENS      =       37        0       56        0
+OUT LEVEL      =      127      127       58      127
+FEEDBACK       =        0        0        0        0
+FB TYPE        = Sawtooth Sawtooth   Square   Square
+FREQ MODE      =    Ratio    Fixed    Fixed    Ratio
+RATIO | FREQ   =      1.0   45.708     10.0      3.0
+   freq coarse =        1       13        8        3
+   freq fine   =        0       66        0        0
+FREQ DETUNE    =        0        0        0       -3

@@ -1,0 +1,54 @@
+VOICE NAME     = WobbleBass
+============================
+TRANSPOSE      =      -12
+MONO/POLY      = Mono-Legato
+PORTA TIME     =       18
+PB RANGE       =       12
+ALGORITHM      =        5
+LFO WAVE       = Triangle
+LFO SPEED      =       73
+LFO DELAY      =       43
+LFO PMD        =        0
+PEG RATE 1     =       64
+PEG RATE 2     =       64
+PEG RATE 3     =       64
+PEG RATE 4     =       64
+PEG LEVL 1     =        0
+PEG LEVL 2     =        0
+PEG LEVL 3     =        0
+PEG LEVL 4     =        0
+FX1 TYPE       =        1 (Distortion)
+FX1 PARAM 1    =       92 (Drive)
+FX1 PARAM 2    =       56 (Tone)
+FX2 TYPE       =        6 (Delay)
+FX2 PARAM 1    =       40 (Depth)
+FX2 PARAM 2    =        5 (Time)
+
+                      OP1      OP2      OP3      OP4     
+----------------------------------------------------
+OP Off/On      =       On       On       On       On
+EG RATE 1      =      127        7      127      127
+EG RATE 2      =       97       71       74       45
+EG RATE 3      =      127      127      127      127
+EG RATE 4      =      127       44      127       86
+EG LEVEL 1     =      127       31      127      127
+EG LEVEL 2     =       90      127        0        0
+EG LEVEL 3     =       90      127        0        0
+EG LEVEL 4     =        0        0      127        0
+RATE SCALING   =        0        0        0        0
+SCALING LD     =        0        0        0        0
+SCALING RD     =        0       40       19       50
+SCALING LC     =     -LIN     -LIN     -LIN     -LIN
+SCALING RC     =     -LIN     -LIN     -LIN     -LIN
+LFO AMD        =       50       66        0       73
+LFO PMD        =       On       On       On       On
+PEG Off/On     =       On       On       On       On
+VELO SENS      =        0        0       38       51
+OUT LEVEL      =      127      104       84      111
+FEEDBACK       =        0        0        0        0
+FB TYPE        = Sawtooth Sawtooth Sawtooth Sawtooth
+FREQ MODE      =    Ratio    Ratio    Ratio    Ratio
+RATIO | FREQ   =      0.5      2.0      5.0      1.0
+   freq coarse =        0        2        5        1
+   freq fine   =        0        0        0        0
+FREQ DETUNE    =        0        0        0        0
