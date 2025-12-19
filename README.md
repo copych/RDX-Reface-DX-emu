@@ -15,8 +15,15 @@ The code is written from scratch, but has a lot of AI generated pieces. Otherwis
 RDX folder contains the Arduino IDE project.
 
 **!IMPORTANT!** Upload `/data` folder with patches to the ESP board, otherwise you won't hear anything worth.
-refer to `config.h` to see pins and edit settings
 
+Read the instructions here [https://github.com/earlephilhower/arduino-littlefs-upload]
+
+Refer to `config.h` to see pins and edit settings
+
+<img src=https://github.com/copych/RDX/blob/main/rdx.jpg>
+
+
+##  COMPILE OPTIONS
 ```
 // ===================== SYNTHESIZER =====================
 #define MAX_VOICES 8
