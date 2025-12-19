@@ -105,55 +105,91 @@ enum RDX_ScaleCurve : uint8_t {
 };
 */
 
-void drawKeyScaling(UI_Display& display, uint8_t x0, uint8_t y0, uint8_t w, uint8_t h, uint8_t l_curve, uint8_t r_curve) {
+void drawKeyScaling(UI_Display& display, uint8_t x0, uint8_t y0, uint8_t w, uint8_t h, uint8_t l_curve, uint8_t r_curve, uint8_t l_val, uint8_t r_val) {
   // center vertical line
     int x = x0 + 2;
     int y = y0 + 15;
+    int yc = (h - y + y0) / 2 - 2;
     display.setTextScale(UITextScale::X1);
     display.setBrush(UIDisplayBrush::SOLID);
     display.setColor(UIDisplayColor::BLACK);
-    display.drawVLine(x + w / 2, y , h );
+    display.drawVLine(x + w / 2, y , yc * 2);
+
     display.setBrush(UIDisplayBrush::DOTTED);
     display.setColor(UIDisplayColor::WHITE);
-    display.drawVLine(x + w / 2, y , h / 2 - 2);
-    display.drawVLine(x + w / 2, y + h / 2 + 3 ,  h / 2 - 2 );
-    display.setPixel( x + w / 2, y + h / 2 , true);
-  //    
+    display.drawVLine(x + w / 2, y , yc - 2);
+    display.drawVLine(x + w / 2, y + yc + 3 ,  yc - 2 );
+    display.setPixel( x + w / 2, y + yc - 1 , true);
+    display.setPixel( x + w / 2, y + yc , true);
+
+    int yb = y + yc - 15;
     display.setBrush(UIDisplayBrush::SOLID);
     switch(l_curve) {
       case 0: // neg lin
-        display.drawBitmap( x, y, curve_lin, 30, 31, true, true);
         display.drawText(x, y0, " LIN" ) ;
+        if(l_val>0) {
+          display.drawBitmap( x, yb, curve_lin, 30, 31, true, true);
+        } else {
+          display.fillRect(x, yb + 14, 30, 2);
+        }
         break;
       case 1: // neg exp
-        display.drawBitmap( x, y, curve_exp, 30, 31, true, true);
         display.drawText(x, y0, " EXP" ) ;
+        if(l_val>0) {
+          display.drawBitmap( x, yb, curve_exp, 30, 31, true, true);
+        } else {
+          display.fillRect(x, yb + 14, 30, 2);
+        }
         break;
       case 2: // pos exp
-        display.drawBitmap( x, y, curve_exp, 30, 31, true, false);
         display.drawText(x, y0, " EXP" ) ;
+        if(l_val>0) {
+          display.drawBitmap( x, yb, curve_exp, 30, 31, true, false);
+        } else {
+          display.fillRect(x, yb + 14, 30, 2);
+        }
         break;
       case 3: // pos lin
-        display.drawBitmap( x, y, curve_lin, 30, 31, true, false);
         display.drawText(x, y0, " LIN" ) ;
+        if(l_val>0) {
+          display.drawBitmap( x, yb, curve_lin, 30, 31, true, false);
+        } else {
+          display.fillRect(x, yb + 14, 30, 2);
+        }
         break;
     }
     switch(r_curve) {
       case 0: // neg lin
-        display.drawBitmap( x + 31, y, curve_lin, 30, 31, false, true);
         display.drawText(x + 32, y0, " LIN" ) ;
+        if(r_val>0) {
+          display.drawBitmap( x + 31, yb, curve_lin, 30, 31, false, true);
+        } else {
+          display.fillRect(x + 31, yb + 14, 30, 2);
+        }
         break;
       case 1: // neg exp
-        display.drawBitmap( x + 31, y, curve_exp, 30, 31, false, true);
         display.drawText(x + 32, y0, " EXP" ) ;
+        if(r_val>0) {
+          display.drawBitmap( x + 31, yb, curve_exp, 30, 31, false, true);
+        } else {
+          display.fillRect(x + 31, yb + 14, 30, 2);
+        }
         break;
       case 2: // pos exp
-        display.drawBitmap( x + 31, y, curve_exp, 30, 31, false, false);
         display.drawText(x + 32, y0, " EXP" ) ;
+        if(r_val>0) {
+          display.drawBitmap( x + 31, yb, curve_exp, 30, 31, false, false);
+        } else {
+          display.fillRect(x + 31, yb + 14, 30, 2);
+        }
         break;
       case 3: // pos lin
-        display.drawBitmap( x + 31, y, curve_lin, 30, 31, false, false);
-        display.drawText(x + 32, y0, " LIN" ) ;
+        display.drawText(x + 32, y0, " LIN" ) ;        
+        if(r_val>0) {
+          display.drawBitmap( x + 31, yb, curve_lin, 30, 31, false, false);
+        } else {
+          display.fillRect(x + 31, yb + 14, 30, 2);
+        }
         break;
     }
 }
@@ -175,12 +211,12 @@ void drawWave(UI_Display& display, uint8_t x, uint8_t y, uint8_t wave_id) {
 }
 
 // draws vertical lines from the bottom height=h, number of zones=n (not dividers)
-void drawDividers(UI_Display& display, uint8_t n, uint8_t h) {
+void drawDividers(UI_Display& display, uint8_t n, uint8_t y0, uint8_t h) {
     display.setTextScale(UITextScale::X1);
     display.setBrush(UIDisplayBrush::SOLID);
     display.setColor(UIDisplayColor::WHITE);
     int dx = display.getWidth() / n; 
     for (int i = 1; i < n ; i++ ) {
-        display.drawVLine(dx * i, display.getHeight() - h, h);
+        display.drawVLine(dx * i, y0, h);
     }
 }

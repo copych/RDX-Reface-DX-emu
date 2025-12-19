@@ -43,8 +43,7 @@ inline void setTextScale(UITextScale s) { textScale_ = s; }
     virtual int getWidth() const = 0;
     virtual int getHeight() const = 0;
     virtual void update() = 0;
-    virtual void clear() = 0;
-    virtual void clearRegion(int x, int y, int w, int h) = 0;
+    virtual void clear() = 0; 
 
     // ---------------- Brush & Color ----------------
     inline void setBrush(UIDisplayBrush b) { brush_ = b; }
@@ -52,8 +51,7 @@ inline void setTextScale(UITextScale s) { textScale_ = s; }
 
     inline void setColor(UIDisplayColor c) { color_ = c; }
     inline UIDisplayColor getColor() const { return color_; }
-
-    virtual void setFontByGliphSize(uint8_t w, uint8_t h) = 0;
+ 
 
     int getFontHeight() { return FONT_HEIGHT * (int)textScale_; };
     int getFontWidth() { return FONT_WIDTH; };
@@ -214,6 +212,15 @@ public:
         }
     }
 
+	inline void drawTextBytes(int x, int y, const uint8_t* txt, int len) {
+		for (int i = 0; i < len; ++i) {
+			char c = (char)txt[i];
+			if (c == 0) break;     // optional early stop
+			drawChar(x, y, c);
+			x += (FONT_WIDTH + 1) * (int)textScale_;
+		}
+	}
+
 
     inline void applyPixel(int x, int y) {
         // global color rules
@@ -228,7 +235,7 @@ public:
     }
 
 
-    void drawBitmap(
+		void drawBitmap(
         int x, int y,
         const uint8_t* bitmap,
         int w, int h,
@@ -239,13 +246,12 @@ public:
 
         for (int j = 0; j < h; ++j) {
             int srcRow = vFlip ? (h - 1 - j) : j;
-            int rowOffset = srcRow * bytesPerRow;
 
             for (int i = 0; i < w; ++i) {
                 int srcCol = hFlip ? (w - 1 - i) : i;
 
-                int byteIndex = rowOffset + (srcCol >> 3);
-                int bitIndex  = 7 - (srcCol & 7);
+                int byteIndex = srcRow * bytesPerRow + (srcCol / 8);
+                int bitIndex  = 7 - (srcCol % 8);
 
                 if ((bitmap[byteIndex] >> bitIndex) & 1)
                     applyPixel(x + i, y + j);
@@ -254,8 +260,7 @@ public:
     }
 
 
-
-    void drawBitmapFragment(
+		void drawBitmapFragment(
         int dstX, int dstY,
         const uint8_t* src,
         int srcW, int srcH,
@@ -268,23 +273,20 @@ public:
 
         for (int j = 0; j < fragH; ++j) {
             int srcRow = fragY + (vFlip ? (fragH - 1 - j) : j);
-            if ((unsigned)srcRow >= (unsigned)srcH) continue;
-
-            int rowOffset = srcRow * bytesPerRow;
+            if (srcRow < 0 || srcRow >= srcH) continue;
 
             for (int i = 0; i < fragW; ++i) {
                 int srcCol = fragX + (hFlip ? (fragW - 1 - i) : i);
-                if ((unsigned)srcCol >= (unsigned)srcW) continue;
+                if (srcCol < 0 || srcCol >= srcW) continue;
 
-                int byteIndex = rowOffset + (srcCol >> 3);
-                int bitIndex  = 7 - (srcCol & 7);
+                int byteIndex = srcRow * bytesPerRow + (srcCol / 8);
+                int bitIndex  = 7 - (srcCol % 8);
 
                 if ((src[byteIndex] >> bitIndex) & 1)
                     applyPixel(dstX + i, dstY + j);
             }
-        }
+        } 
     }
-
 
 
 

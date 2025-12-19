@@ -94,7 +94,13 @@ void drawSlider2(UI_Display& display, uint8_t x, uint8_t y, uint8_t w, uint8_t h
 
 
 // vertical -v..v slider with center marks
-void drawSlider3(UI_Display& display, uint8_t x, uint8_t y, uint8_t w, uint8_t h, int v, int minV, int maxV, bool show_val = true, bool show_sign = true) {
+void drawSlider3( UI_Display& display, 
+                  uint8_t x, uint8_t y, 
+                  uint8_t w, uint8_t h, 
+                  int v, int minV, int maxV, 
+                  bool show_val = true, 
+                  bool show_sign = true
+                  ) {
   int c = 0;
   char txt[5];
   snprintf(txt, sizeof(txt), "%d", abs(v));

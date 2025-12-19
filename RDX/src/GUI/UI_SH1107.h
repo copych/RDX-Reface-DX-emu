@@ -3,9 +3,9 @@
 #include "UI_Display.h"
 #include "UI_OLED_IO.h"
 
-class SSD1306_Display : public UI_Display {
+class SH1107_Display : public UI_Display {
 public:
-    SSD1306_Display() {
+    SH1107_Display() {
         width_  = OLED_WIDTH;
         height_ = OLED_HEIGHT;
         buf_    = buffer_;
@@ -22,22 +22,19 @@ public:
     inline int getHeight() const override { return height_; }
 
     inline void clear() override {
-        memset(buf_, 0, sizeof(buffer_));
-    }
-
-    inline void clearRegion(int x, int y, int w, int h) override {
-        for (int yy = y; yy < y + h; yy++)
-            drawHLine(x, yy, w);
+        memset(buffer_, 0, sizeof(buffer_));
     }
 
     inline void update() override {
         uint8_t pages = height_ >> 3;
         size_t idx = 0;
 
+        uint8_t column_offset = 32;
+
         for (uint8_t p = 0; p < pages; p++) {
-            io_.cmd(0xB0 | p);  // page
-            io_.cmd(0x00);      // col low
-            io_.cmd(0x10);      // col high
+            io_.cmd(0xB0 | p);
+            io_.cmd(0x00 + (column_offset & 0x0F));      // lower nibble
+            io_.cmd(0x10 + ((column_offset >> 4) & 0x0F)); // higher nibble
             io_.data(buf_ + idx, width_);
             idx += width_;
         }
@@ -45,6 +42,7 @@ public:
 
     inline void setPixel(int x, int y, bool c) override {
         if ((unsigned)x >= width_ || (unsigned)y >= height_) return;
+        x = width_ - 1 - x;
         uint16_t pos = (y >> 3) * width_ + x;
         uint8_t bit  = (y & 7);
         if (c) buf_[pos] |=  (1 << bit);
@@ -53,6 +51,7 @@ public:
 
     inline bool getPixel(int x, int y) const override {
         if ((unsigned)x >= width_ || (unsigned)y >= height_) return false;
+        x = width_ - 1 - x;
         uint16_t pos = (y >> 3) * width_ + x;
         return (buf_[pos] >> (y & 7)) & 1;
     }
@@ -62,21 +61,20 @@ private:
     uint8_t buffer_[(OLED_WIDTH * OLED_HEIGHT) / 8];
 
     void initDisplay() {
-        static const uint8_t init_seq[] = {
-            0xAE, 0xD5, 0x80,
+        static const uint8_t seq[] = {
+            0xAE,
+            0xD5, 0x51,
+            0xC0,
+            0xA1,
             0xA8, OLED_HEIGHT - 1,
-            0xD3, 0x00,
-            0x40,
-            0x8D, 0x14,
-            0x20, 0x00,
-            0xA1, 0xC8,
-            0xDA, 0x12,
-            0x81, 0xCF,
-            0xD9, 0xF1,
-            0xDB, 0x40,
-            0xA4, 0xA6,
+            0xAD, 0x30,
+            0x81, 0x80,
+            0xD9, 0x22,
+            0xDB, 0x35,
+            0xA4,
+            0xA6,
             0xAF
         };
-        io_.cmd(init_seq, sizeof(init_seq));
+        io_.cmd(seq, sizeof(seq));
     }
 };
