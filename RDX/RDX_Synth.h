@@ -6,9 +6,12 @@
 #include "RDX_Types.h"
 #include "RDX_State.h"
 #include "RDX_VoiceAlloc.h"
+#include "RDX_GUI.h"
 
 
-
+#ifdef ENABLE_GUI
+extern RDX_GUI gui;
+#endif
 extern PresetManager pm;
 
 class  RDX_Synth {
@@ -30,7 +33,9 @@ public:
         state_.workingPatch = patch; 
         calcOutputGain();
         state_.storedPatch = patch;
-
+#ifdef ENABLE_GUI
+        gui.push();
+#endif
     }
 
     inline void noteOn(uint8_t note, uint8_t vel) {

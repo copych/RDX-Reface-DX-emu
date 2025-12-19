@@ -38,19 +38,19 @@
 
 // ===================== GUI SETTINGS ==========================================================================
 
-  #define ACTIVE_STATE  LOW   // LOW = switch connects to GND, HIGH = switch connects to 3V3
+#define ACTIVE_STATE  LOW   // LOW = switch connects to GND, HIGH = switch connects to 3V3
 
-  #define BTN0_PIN 	14
-  #define ENC0_A_PIN 	15
-  #define ENC0_B_PIN 	16
+#define BTN0_PIN 	14
+#define ENC0_A_PIN 	15
+#define ENC0_B_PIN 	16
 
-  #define BTN1_PIN 	41
-  #define BTN2_PIN 	42
-  #define BTN3_PIN 	2
-  #define BTN4_PIN  1
-  #define BTN5_PIN 	0
+#define BTN1_PIN 	41
+#define BTN2_PIN 	42
+#define BTN3_PIN 	2
+#define BTN4_PIN  1
+#define BTN5_PIN 	0
 
-// #define ENABLE_GUI
+#define ENABLE_GUI
 
 #define USE_SD // where to store patches and configs: comment out to use LittleFS on internal flash
 

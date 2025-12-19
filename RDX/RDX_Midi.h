@@ -4,9 +4,14 @@
 #include <MIDI.h> 
 #include "RDX_State.h" // for RDX_State::getState()
 #include "RDX_Synth.h"
+#include "RDX_GUI.h"
 
 
 extern RDX_Synth synth;   // defined in RDX.ino
+
+#ifdef ENABLE_GUI
+extern RDX_GUI gui;
+#endif
 
 #if MIDI_IN_DEV == USE_USB_MIDI_DEVICE
     #include "src/usbmidi/src/USB-MIDI.h"

@@ -20,12 +20,13 @@ int VOICES = MAX_VOICES;
 #include "src/i2s/i2s_in_out.h"
 #include "RDX_FX.h"
 
-
 #include "controls.h"
 
 #include <FS.h>
 #include <LittleFS.h>
 //#include <SD_MMC.h>
+
+
 
 constexpr char* TAG = "RDX";
 
@@ -51,8 +52,8 @@ static FXHost fx;
 
 
 #ifdef ENABLE_GUI
-#include "TextGUI.h"
-TextGUI gui;
+    #include "RDX_GUI.h"
+    RDX_GUI gui;
 #endif
 
 
@@ -91,9 +92,7 @@ static void IRAM_ATTR midiTask(void*) {
     while (true) {
         processMidi();   // incoming messages
         vTaskDelay(1);
-#ifdef ENABLE_GUI
-        gui.process();
-#endif
+
         processControls();
         taskYIELD();
         
@@ -147,8 +146,8 @@ void setup() {
   initControls();
   
 #ifdef ENABLE_GUI
-    gui.begin();
-    gui.message("Synth Loading...");
+  gui.begin();
+  gui.push();
 #endif
    
     // ----------------- Audio -------------------------
