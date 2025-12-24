@@ -267,6 +267,7 @@ inline void handleSysEx(byte* data, unsigned length) {
         ESP_LOGI("IN", "Unhandled SysEx device=0x%02X", device);
         break;
     }
+    gui.push();
 }
 
 
