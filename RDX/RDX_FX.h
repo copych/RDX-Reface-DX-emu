@@ -43,33 +43,37 @@ public:
         sampleRate_ = sampleRate;
 
         timing[FX_THRU]  = 0; // us per block of 128 samples
-        timing[FX_DISTORTION] = 34;
-        timing[FX_TOUCHWAH] = 85;
-        timing[FX_CHORUS] = 62;
-        timing[FX_FLANGER] = 70;
-        timing[FX_PHASER] = 95;
-        timing[FX_DELAY] = 56;
-        timing[FX_REVERB] = 152;
+        timing[FX_DISTORTION] = 34 * TIMING_CORRECTION;
+        timing[FX_TOUCHWAH] = 85 * TIMING_CORRECTION;
+        timing[FX_CHORUS] = 62 * TIMING_CORRECTION;
+        timing[FX_FLANGER] = 70 * TIMING_CORRECTION;
+        timing[FX_PHASER] = 95 * TIMING_CORRECTION;
+        timing[FX_DELAY] = 56 * TIMING_CORRECTION;
+        timing[FX_REVERB] = 152 * TIMING_CORRECTION;
+        voice_timing = 340 * TIMING_CORRECTION;
 
-        uint32_t dram_largest = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
-        uint32_t psram_largest = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM);
+        uint32_t dram_largest = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+        uint32_t psram_largest = heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
         szDRAM = (dram_largest - 8000) / FX_SLOTS / sizeof(float); // small buffers for scratch * 2 slots ~101kB per slot
         szPSRAM = std::min((uint32_t)sampleRate * 7, psram_largest / FX_SLOTS / sizeof(float)) ; // seconds * 2 slots 
 
         if (!scratchDRAM[0]) {
-            scratchDRAM[0] = (float*) heap_caps_malloc(szDRAM * sizeof(float), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-            scratchDRAM[1] = (float*) heap_caps_malloc(szDRAM * sizeof(float), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+            scratchDRAM[0] = (float*) heap_caps_calloc(1, szDRAM * sizeof(float), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+            scratchDRAM[1] = (float*) heap_caps_calloc(1, szDRAM * sizeof(float), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         }
 
         if (!scratchPSRAM[0]) {
-            scratchPSRAM[0] = (float*) heap_caps_malloc(szPSRAM * sizeof(float), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
-            scratchPSRAM[1] = (float*) heap_caps_malloc(szPSRAM * sizeof(float), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+            scratchPSRAM[0] = (float*) heap_caps_calloc(1, szPSRAM * sizeof(float), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
+            scratchPSRAM[1] = (float*) heap_caps_calloc(1, szPSRAM * sizeof(float), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
         }
 
         if (!scratchDRAM[1] || !scratchPSRAM[1]) {
-            ESP_LOGE("FX","Unable to allocate scratch arrays DRAM: %#010x, PSRAM: %#010x",scratchDRAM[1], scratchPSRAM[1] );
+            ESP_LOGE("FX","Unable to allocate scratch arrays DRAM: %#010x, PSRAM: %#010x", scratchDRAM[1], scratchPSRAM[1] );
             delay(100);
             while (1) {;}
+        } else {            
+            ESP_LOGI("FX","Allocated scratch arrays [slot0] DRAM: %#010x, %dkB , PSRAM: %#010x, %dkB", scratchDRAM[0], szDRAM/1024*sizeof(float), scratchPSRAM[0], szPSRAM/1024*sizeof(float) );
+            ESP_LOGI("FX","Allocated scratch arrays [slot1] DRAM: %#010x, %dkB , PSRAM: %#010x, %dkB", scratchDRAM[1], szDRAM/1024*sizeof(float), scratchPSRAM[1], szPSRAM/1024*sizeof(float) );
         }
         // Initialize all instances
         for (int i = 0; i < FX_COUNT; ++i) {
@@ -94,7 +98,7 @@ public:
             fx_time += timing[(FX_ID)common_.effects[s][0]];
         }
         if (common_.monoPoly == RDX_MODE_POLY) {
-            VOICES = (2850 - fx_time) / 340; // 340ms per voice , polyphony estimation
+            VOICES = (1e+06f * DMA_BUFFER_LEN / SAMPLE_RATE - 50 - fx_time) / voice_timing; // ~340ms per voice on S3, polyphony estimation; 50ms is a gap
         } else {
             VOICES = 1;
         }
@@ -145,7 +149,7 @@ private:
     FxReverb    reverb_[FX_SLOTS];
 
     int timing[FX_COUNT] = {0} ;
-
+    int voice_timing = 340;
 
 
     inline FXBase* getInstance(FX_ID id, uint8_t slot) {

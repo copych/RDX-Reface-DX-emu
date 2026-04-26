@@ -143,5 +143,4 @@ private:
         if (++idx >= N) { idx = 0; }
         return out;
     }
-};
-
+}; 

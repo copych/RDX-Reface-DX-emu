@@ -1,6 +1,8 @@
 #pragma once
+#include "config.h"
 
 
+#ifdef ENABLE_GUI
 #include "RDX_State.h"
 #include "src/GUI/UI_Display.h"
 
@@ -70,7 +72,7 @@ class RDX_GUI {
       display.setBrush(UIDisplayBrush::DOTTED);
       display.drawHLine(0, 28, 128);
 
-      drawAlgo(display, 30,  patch_.common.algorithm, 33, true);
+      drawAlgo(display, 29,  patch_.common.algorithm, 35, true);
       display.update();
       needUpdate_ = false;
     }
@@ -86,3 +88,5 @@ class RDX_GUI {
     int32_t updateCounter_ = 0; 
 
 };
+
+#endif //ENABLE_GUI

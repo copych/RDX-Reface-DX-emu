@@ -77,12 +77,12 @@ void initControls() {
   //  inputManager.addDirectEncoder(11, 27, 14, MuxEncoder::MODE_QUAD_STEP); // Quad step encoder
     
     // Configure direct buttons
-    inputManager.addDirectButton(20, BTN0_PIN, true);  // Direct button on GPIO BTN0_PIN (active low)
-    inputManager.addDirectButton(21, BTN1_PIN, true);  // Direct button on GPIO BTN0_PIN (active low)
-    inputManager.addDirectButton(22, BTN2_PIN, true);  // Direct button on GPIO BTN0_PIN (active low)
-    inputManager.addDirectButton(23, BTN3_PIN, true);  // Direct button on GPIO BTN1_PIN (active low)
-    inputManager.addDirectButton(24, BTN4_PIN, true);  // Direct button on GPIO BTN1_PIN (active low)
-    inputManager.addDirectButton(25, BTN5_PIN, true);  // Direct button on GPIO BTN1_PIN (active low)
+    inputManager.addDirectButton(20, BTN0_PIN, true);  // Direct button on GPIO BTNx_PIN (active low)
+    inputManager.addDirectButton(21, BTN1_PIN, true);  // Direct button on GPIO BTNx_PIN (active low)
+    inputManager.addDirectButton(22, BTN2_PIN, true);  // Direct button on GPIO BTNx_PIN (active low)
+    inputManager.addDirectButton(23, BTN3_PIN, true);  // Direct button on GPIO BTNx_PIN (active low)
+    inputManager.addDirectButton(24, BTN4_PIN, true);  // Direct button on GPIO BTNx_PIN (active low)
+    inputManager.addDirectButton(25, BTN5_PIN, true);  // Direct button on GPIO BTNx_PIN (active low)
   /*  
     // Custom inputs with special settings
     inputManager.addDirectEncoder(12, 15, 16, MuxEncoder::MODE_DOUBLE_STEP); // Double step encoder

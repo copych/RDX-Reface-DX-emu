@@ -292,13 +292,20 @@ inline IRAM_ATTR __attribute__((always_inline)) float semitonesToRatio(float off
 
 constexpr float harmonics[8] = {
     1.000000f,   // H1
-    0.0045644f,  // H2
-    0.0044668f,  // H3
-    0.0011220f,  // H4
-    0.0006309f,  // H5
-    0.0002512f,  // H6
-    0.0000891f,  // H7
-    0.0000501f   // H8
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f,
+    0.0f // clean sine wave
+//    0.0045644f,  // H2 // measured values (not sure if it helps)
+//    0.0044668f,  // H3
+//    0.0011220f,  // H4
+//    0.0006309f,  // H5
+//    0.0002512f,  // H6
+//    0.0000891f,  // H7
+//    0.0000501f   // H8
 };
 
 constexpr float INV_SIZE = 1.0f / float(SINLUT_SIZE);
