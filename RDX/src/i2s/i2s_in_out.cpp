@@ -5,6 +5,7 @@
 #include "i2s_in_out.h"
 #include "esp_log.h"
 #include "esp_task_wdt.h" 
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
 static const char* TAG = "I2SAUDIO";
 
 /*
@@ -19,8 +20,9 @@ static const char* TAG = "I2SAUDIO";
       MALLOC_CAP_INVALID  Memory can't be used / list end marker
 */
 
+
 BUF_TYPE* I2S_Audio::allocateBuffer(const char* name) {
-    BUF_TYPE* buf = (BUF_TYPE*)heap_caps_calloc(16, _buffer_size, _malloc_caps);
+    BUF_TYPE* buf = (BUF_TYPE*)heap_caps_calloc(1, _buffer_size, _malloc_caps);
     if (!buf) {
         ESP_LOGE(TAG, "Couldn't allocate memory for %s buffer", name);
     } else {
@@ -30,32 +32,35 @@ BUF_TYPE* I2S_Audio::allocateBuffer(const char* name) {
 }
 
 void I2S_Audio::init(eI2sMode select_mode) {
+
+
+#if defined CONFIG_IDF_TARGET_ESP32P4
+    sd_pwr_ctrl_ldo_config_t ldo_config;
+    #ifndef BOARD_SDMMC_POWER_CHANNEL
+      #define BOARD_SDMMC_POWER_CHANNEL 4 // GPIO45 of ESP32P4
+    #endif
+    ldo_config.ldo_chan_id = BOARD_SDMMC_POWER_CHANNEL;
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+    sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
+    sd_pwr_ctrl_set_io_voltage(pwr_ctrl_handle, 3300); // 3v3
+#endif
+
 	_i2s_mode = select_mode;
-	_read_remain_smp = 0;
-	_write_remain_smp = 0;
-	
-#ifndef USE_V3
-	i2s_mode_t port_mode;
-#else
+	_read_remain_smp = DMA_BUFFER_LEN;
+	_write_remain_smp = DMA_BUFFER_LEN;
+
   #if (CHANNEL_SAMPLE_BYTES == 4)
 	_malloc_caps = ( MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT );
   #else
 	_malloc_caps = ( MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT );
   #endif
-#endif  
 
   switch(_i2s_mode) {
     case MODE_IN:
-    #ifndef USE_V3
-      port_mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX);
-    #endif
       pinMode(I2S_DIN_PIN, INPUT);
       _input_buf = allocateBuffer("_input_buf");
       break;
     case MODE_IN_OUT:
-    #ifndef USE_V3
-      port_mode = (i2s_mode_t)( I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX );
-    #endif
       pinMode(I2S_DOUT_PIN, OUTPUT);
       pinMode(I2S_DIN_PIN, INPUT);
       _input_buf = allocateBuffer("_input_buf");
@@ -63,9 +68,6 @@ void I2S_Audio::init(eI2sMode select_mode) {
       break;
     case MODE_OUT:
     default:
-    #ifndef USE_V3
-      port_mode = (i2s_mode_t)( I2S_MODE_MASTER | I2S_MODE_TX );
-    #endif
       pinMode(I2S_DOUT_PIN, OUTPUT);
       _output_buf = allocateBuffer("_output_buf");
 
@@ -73,15 +75,12 @@ void I2S_Audio::init(eI2sMode select_mode) {
   pinMode(I2S_BCLK_PIN, OUTPUT);
   pinMode(I2S_WCLK_PIN, OUTPUT);
 
-#ifdef USE_V3
-
   i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(_i2s_port, I2S_ROLE_MASTER);
     chan_cfg.dma_frame_num = DMA_BUFFER_LEN;
     chan_cfg.dma_desc_num = DMA_BUFFER_NUM;
   i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle);
   i2s_std_config_t std_cfg = {
       .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
-    //  .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
       .slot_cfg = I2S_STD_PHILIP_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
       .gpio_cfg = {
           .mclk = I2S_GPIO_UNUSED,
@@ -100,68 +99,33 @@ void I2S_Audio::init(eI2sMode select_mode) {
   i2s_channel_init_std_mode(tx_handle, &std_cfg);
   i2s_channel_enable(tx_handle);
   
-  ESP_LOGI(TAG, "I2S started: BCK %d, WCK %d, DAT %d", I2S_BCLK_PIN, I2S_WCLK_PIN, I2S_DOUT_PIN);
-  
-  
-  
-#else
-  i2s_config_t i2s_config = {
-    .mode = (i2s_mode_t)port_mode,
-  //  .mode = (i2s_mode_t)( I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_RX ),
-    .sample_rate = _sample_rate,
-    .bits_per_sample = chn_bit_width,
-    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-    .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S ),
-    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
-    .dma_buf_count = DMA_BUFFER_NUM,
-    .dma_buf_len = DMA_BUFFER_LEN,
-    .use_apll = true,
-    .tx_desc_auto_clear = true,
-  //  .fixed_mclk = 0
-	//	.fixed_mclk = (int)(_sample_rate * mclk_multiplier),
-  };
-
-  i2s_pin_config_t i2s_pin_config = {
-    .bck_io_num     = I2S_BCLK_PIN,
-    .ws_io_num      = I2S_WCLK_PIN,
-    .data_out_num   = I2S_DOUT_PIN,
-    .data_in_num    = I2S_DIN_PIN
-  };
-
-  int err = i2s_driver_install(_i2s_port, &i2s_config, 0, NULL);
-  i2s_set_pin(_i2s_port, &i2s_pin_config);
-  i2s_zero_dma_buffer(_i2s_port);
-  if (err == ESP_OK) {
-    ESP_LOGI(TAG, "I2S started OK at BCLK %d, WCLK %d, DIN %d, DOUT %d", I2S_BCLK_PIN, I2S_WCLK_PIN, I2S_DIN_PIN, I2S_DOUT_PIN);
-    ESP_LOGI(TAG, "int_to_float %10.10f, float_to_int %10.10f", int_to_float, float_to_int );
-  } else { 
-    ESP_LOGE(TAG, "I2S Install Error %d", err);
+  // BCLK warm-up
+  int16_t zero[AUDIO_CHANNEL_NUM * DMA_BUFFER_LEN * sizeof(BUF_TYPE)] = {0};
+  size_t w;
+  for (int i = 0; i < 32; i++) {
+      i2s_channel_write(tx_handle, zero, sizeof(zero), &w, portMAX_DELAY);
   }
-#endif
+
+  ESP_LOGI(TAG, "I2S started: BCK %d, WCK %d, DAT %d", I2S_BCLK_PIN, I2S_WCLK_PIN, I2S_DOUT_PIN);
+
 }
 
 void I2S_Audio::deInit() {
 	if (_input_buf) { free(_input_buf); _input_buf = nullptr; }
 	if (_output_buf) { free(_output_buf); _output_buf = nullptr; }
-#ifdef USE_V3  
+
 	i2s_channel_disable(tx_handle);
 	i2s_del_channel(tx_handle);
-#else
-	i2s_zero_dma_buffer(_i2s_port);
-	i2s_driver_uninstall(_i2s_port);
-#endif
+
 }
 
 
 void   I2S_Audio::readBuffer(BUF_TYPE* buf) {
 	size_t bytes_read = 0;
 	int32_t err = 0;
-#ifdef USE_V3
 	err = i2s_channel_read(rx_handle, buf, _buffer_size, &bytes_read, portMAX_DELAY);
 	_read_remain_smp = DMA_BUFFER_LEN;
-#else
-	err = i2s_read(_i2s_port, (void*) buf, _buffer_size, &bytes_read, portMAX_DELAY);
-#endif
+
 	if (err != ESP_OK || bytes_read < _buffer_size) {
 		ESP_LOGI(TAG, "I2S read, err %d bytes read: %d", err,  bytes_read);
 	}
@@ -171,11 +135,9 @@ void   I2S_Audio::readBuffer(BUF_TYPE* buf) {
 void   I2S_Audio::writeBuffer(BUF_TYPE* buf){
 	size_t bytes_written = 0;
 	int32_t err = 0;
-#ifdef USE_V3 
+
 	err = i2s_channel_write(tx_handle, buf, _buffer_size, &bytes_written, portMAX_DELAY);
-#else
-	err = i2s_write(_i2s_port, (char *)buf, _buffer_size, &bytes_written, portMAX_DELAY);
-#endif
+
 	_write_remain_smp = bytes_written / WHOLE_SAMPLE_BYTES;
 	if (err != ESP_OK) {
 		ESP_LOGE(TAG, "Error writing to port");  
@@ -269,30 +231,8 @@ void I2S_Audio::writeBuffers(float* L, float* R) {
 #endif
     }
 
-#ifdef USE_V3  
     size_t bytes_written = 0;
     i2s_channel_write(tx_handle, _output_buf, _buffer_size, &bytes_written, portMAX_DELAY);
-#else
-    size_t bytes_written = 0;
-    i2s_write(_i2s_port, _output_buf, _buffer_size, &bytes_written, portMAX_DELAY);
-#endif
+
 }
-
-
-void I2S_Audio::writeBuffersQ24_8(int32_t* L, int32_t* R) {    
-  if (!_output_buf) return;
-
-    for (int i = 0; i < DMA_BUFFER_LEN; ++i) {
-        _output_buf[2*i + 0] = convertOutSampleQ24_8(L[i]);
-        _output_buf[2*i + 1] = convertOutSampleQ24_8(R[i]);
-    }
-
-    size_t bytes_written = 0;
-#ifdef USE_V3
-    i2s_channel_write(tx_handle, _output_buf, _buffer_size, &bytes_written, portMAX_DELAY);
-#else
-    i2s_write(_i2s_port, _output_buf, _buffer_size, &bytes_written, portMAX_DELAY);
-#endif
-}
-
 
