@@ -22,11 +22,11 @@
 #endif
 
 #ifndef OLED_I2C_SDA
-#define OLED_I2C_SDA 9     // autodetect if -1
+#define OLED_I2C_SDA 8     // autodetect if -1
 #endif
 
 #ifndef OLED_I2C_SCL
-#define OLED_I2C_SCL 8
+#define OLED_I2C_SCL 9
 #endif
 
 // ----------------------- SPI -----------------------
@@ -35,20 +35,20 @@
 #endif
 
 #ifndef OLED_PIN_CS
-#define OLED_PIN_CS 5
+#define OLED_PIN_CS 3
 #endif
 #ifndef OLED_PIN_DC
 #define OLED_PIN_DC 4
 #endif
 #ifndef OLED_PIN_RST
-#define OLED_PIN_RST 6   // -1 = unused
+#define OLED_PIN_RST 5   // -1 = unused
 #endif
 
 #ifndef OLED_SPI_SCK
-#define OLED_SPI_SCK 8
+#define OLED_SPI_SCK 19
 #endif
 #ifndef OLED_SPI_MOSI          // SDA
-#define OLED_SPI_MOSI 9
+#define OLED_SPI_MOSI 18
 #endif
 
 #ifndef OLED_SPI_FREQ
