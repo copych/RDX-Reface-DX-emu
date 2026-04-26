@@ -1,7 +1,7 @@
 # RDX -- Yamaha Reface DX emulator
-This is an ESP32S3 approximation of a known FM synth. I don't have the real one, so it's a kind of a self-set challenge. It has a lot of 'AS IS', and mostly consists of compromises.
+This is an ESP32S3 / ESP32P4 approximation of a known FM synth. I don't have the real one, so it's a kind of a self-set challenge. It has a lot of 'AS IS', and mostly consists of compromises.
 Yet, by default it's a USB-MIDI device that one can use with some midi host. It understands almost every documented midi feature of a Reface DX and can connect to Soundmondo(tm), though I don't know how the original behaves exactly, I've never had my hands on a real Reface synth.
-On an ESP32-S3 RDX has 7-8 notes polyphony depending on the effects chosen, 4 FM-operators and 2 effects in a chain. Sample rate is same as original's 44100Hz.
+On an ESP32-S3 RDX has 7-8 notes (ESP32-P4 gives 11 notes) polyphony depending on the effects chosen, 4 FM-operators and 2 effects in a chain. Sample rate is same as original's 44100Hz.
 The code is written from scratch, but has a lot of AI assisted pieces. Otherwise it'd take me forever to get to the current state.
 
 <a href=https://youtube.com/shorts/Vu2NzcPyU-I>Youtube short video to have some idea of what it is</a>
@@ -26,32 +26,4 @@ Refer to `config.h` to see pins and edit settings
 
 
 ##  COMPILE OPTIONS
-```
-// ===================== SYNTHESIZER =====================
-#define MAX_VOICES 8
-#define MAX_VOICES_PER_NOTE 2
-
-// ===================== MIDI PINS =======================
-#define MIDI_IN         4      // if USE_MIDI_STANDARD is selected as MIDI_IN, this pin receives MIDI messages
-
-// ===================== I2S PINS ========================
-#define I2S_BCLK_PIN    5       // I2S BIT CLOCK pin (BCL BCK CLK)
-#define I2S_DOUT_PIN    6       // MCU Data Out: connect to periph. DATA IN (DIN D DAT)
-#define I2S_WCLK_PIN    7       // I2S WORD CLOCK pin (WCK WCL LCK)
-#define I2S_DIN_PIN     -1      // MCU Data In: connect to periph. DATA OUT (DOUT D SD)
-
-// ===================== GUI SETTINGS ====================
-
-#define ACTIVE_STATE  LOW   // LOW = switch connects to GND, HIGH = switch connects to 3V3
-
-#define BTN0_PIN 	14
-#define ENC0_A_PIN 	15
-#define ENC0_B_PIN 	16
-
-#define BTN1_PIN 	41
-#define BTN2_PIN 	42
-#define BTN3_PIN 	2
-#define BTN4_PIN  1
-#define BTN5_PIN 	0
-  
-```
+Please, refer to the `config.h` for pins etc. The project is mutating, so keeping docs in sync is a hard task for me alone. 
