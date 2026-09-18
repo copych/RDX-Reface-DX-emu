@@ -79,7 +79,11 @@ class IRAM_ATTR I2S_Audio {
     
     // functions that convert samples between normalized float and native I2S PCM data
     inline float                convertInSample(BUF_TYPE smp)     { return smp * int_to_float; }
-    inline int32_t              convertOutSample(float smp)       { return smp * float_to_int; }
+    inline int32_t              convertOutSample(float smp)       {
+        if (smp > 1.0f) smp = 1.0f;
+        else if (smp < -1.0f) smp = -1.0f;
+        return (int32_t)(smp * float_to_int);
+    }
     
     // functions that read/write a single channel sample from/to custom buffers supplied via pointer argument
     inline float                readSample(int n, int chan, BUF_TYPE* buf)             { return convertInSample(buf[_channel_num * n + chan]); }
