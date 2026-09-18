@@ -1,7 +1,6 @@
 // fx_reverb_simple.h
 #pragma once
 
-
 #include "fx_base.h"
 #include "esp32-hal.h"
 #include <cmath>
@@ -21,25 +20,95 @@ public:
                  float* scratchSlow, uint32_t slowSize,
                  int sampleRate) override
     {
-        (void)scratchSlow; (void)slowSize;
-        sampleRate_ = sampleRate; 
+        (void)scratchSlow;
+        (void)slowSize;
+
+        prepared_ = false;
+        sampleRate_ = sampleRate;
+
+        if (!scratchFast || fastSize == 0) {
+            ESP_LOGE("Reverb", "slot %d: no DRAM scratch", slotId_);
+            return false;
+        }
+
+        // Work out the preferred topology first. fastSize is a hard memory
+        // budget: prepare() must never write beyond the supplied scratch area.
+        uint32_t nominalTotal = 0;
+
+        for (int ch = 0; ch < 2; ++ch) {
+            for (int i = 0; i < NUM_COMBS; ++i) {
+                nominalCombSize_[ch][i] =
+                    int((comb_lengths_ms[i] / 1000.f) * sampleRate_) + ch * 17;
+                nominalTotal += nominalCombSize_[ch][i];
+            }
+
+            for (int i = 0; i < NUM_ALLPASSES; ++i) {
+                nominalAllSize_[ch][i] =
+                    int((allpass_lengths_ms[i] / 1000.f) * sampleRate_) + i + ch;
+                nominalTotal += nominalAllSize_[ch][i];
+            }
+        }
+
+        float sizeScale = 1.0f;
+        if (fastSize < nominalTotal) {
+            sizeScale = (float)fastSize / (float)nominalTotal;
+        }
+
+        // Below this point the topology becomes too short to remain useful.
+        static constexpr float MIN_SIZE_SCALE = 0.35f;
+        if (sizeScale < MIN_SIZE_SCALE) {
+            ESP_LOGE("Reverb",
+                     "slot %d: insufficient DRAM scratch: %.1f kB available, "
+                     "%.1f kB nominal, scale %.3f < %.2f",
+                     slotId_,
+                     fastSize * sizeof(float) / 1024.0f,
+                     nominalTotal * sizeof(float) / 1024.0f,
+                     sizeScale, MIN_SIZE_SCALE);
+            return false;
+        }
+
+        // Build the actual delay layout from the budget. floor() via integer
+        // conversion guarantees that the sum cannot exceed fastSize.
+        uint32_t used = 0;
+
+        for (int ch = 0; ch < 2; ++ch) {
+            for (int i = 0; i < NUM_COMBS; ++i) {
+                int len = (int)(nominalCombSize_[ch][i] * sizeScale);
+                if (len < 1) len = 1;
+                combSize_[ch][i] = len;
+                used += len;
+            }
+
+            for (int i = 0; i < NUM_ALLPASSES; ++i) {
+                int len = (int)(nominalAllSize_[ch][i] * sizeScale);
+                if (len < 1) len = 1;
+                allSize_[ch][i] = len;
+                used += len;
+            }
+        }
+
+        // Defensive guard against future topology changes or rounding changes.
+        if (used > fastSize) {
+            ESP_LOGE("Reverb",
+                     "slot %d: calculated layout exceeds scratch: %u > %u floats",
+                     slotId_, (unsigned)used, (unsigned)fastSize);
+            return false;
+        }
 
         float* ptr = scratchFast;
 
-        // allocate combs
-        for (int ch=0; ch<2; ++ch) {
-            for (int i=0; i<NUM_COMBS; ++i) {
-                int len = int((comb_lengths_ms[i] / 1000.f) * sampleRate_) + ch * 17;
-                combSize_[ch][i] = len;
+        for (int ch = 0; ch < 2; ++ch) {
+            for (int i = 0; i < NUM_COMBS; ++i) {
+                const int len = combSize_[ch][i];
                 combBuf_[ch][i] = ptr;
                 ptr += len;
                 std::memset(combBuf_[ch][i], 0, len * sizeof(float));
                 combIdx_[ch][i] = 0;
                 combLPF_[ch][i] = 0.f;
             }
-            for (int i=0; i<NUM_ALLPASSES; ++i) {
-                int len = int((allpass_lengths_ms[i] / 1000.f) * sampleRate_) + i + ch;
-                allSize_[ch][i] = len;
+
+            for (int i = 0; i < NUM_ALLPASSES; ++i) {
+                const int len = allSize_[ch][i];
                 allBuf_[ch][i] = ptr;
                 ptr += len;
                 std::memset(allBuf_[ch][i], 0, len * sizeof(float));
@@ -47,8 +116,15 @@ public:
             }
         }
 
-        uint32_t used = ptr - scratchFast;
-        ESP_LOGI("Reverb", "prepared slot %d: %.1f kB DRAM used", slotId_, used * 4 / 1024.0f);
+        ESP_LOGI("Reverb",
+                 "prepared slot %d: %.1f kB DRAM used / %.1f kB available, "
+                 "nominal %.1f kB, scale %.3f",
+                 slotId_,
+                 used * sizeof(float) / 1024.0f,
+                 fastSize * sizeof(float) / 1024.0f,
+                 nominalTotal * sizeof(float) / 1024.0f,
+                 sizeScale);
+
         prepared_ = true;
         return true;
     }
@@ -83,19 +159,20 @@ private:
     RDX_Common& st = RDX_State::getState().workingPatch.common;
     float* combBuf_[2][NUM_COMBS];
     int combSize_[2][NUM_COMBS];
+    int nominalCombSize_[2][NUM_COMBS];
     int combIdx_[2][NUM_COMBS];
     float combLPF_[2][NUM_COMBS];
     float combGain_[NUM_COMBS];
 
     float* allBuf_[2][NUM_ALLPASSES];
     int allSize_[2][NUM_ALLPASSES];
+    int nominalAllSize_[2][NUM_ALLPASSES];
     int allIdx_[2][NUM_ALLPASSES];
     float allGain_[NUM_ALLPASSES] = {0.7f, 0.7f};
- 
+
     float damping_ = 0.3f;
     float lastTime_ = -1.f;
 
-    
     // DC blocking
     float prev_in = 0.0f;
     float prev_out = 0.0f;
@@ -112,7 +189,7 @@ private:
         lastTime_ = t;
     }
 
-    inline  float processCh(int ch, float in) {
+    inline float processCh(int ch, float in) {
         float sum = 0.f;
         for (int i=0; i<NUM_COMBS; ++i) sum += processComb(ch, i, in);
         sum *= 0.25f;
@@ -139,8 +216,7 @@ private:
         float y = buf[idx];
         buf[idx] = x + y * g;
         float out = y - g * x;
-        //idx = (idx + 1) >= N ? 0 : (idx + 1);
         if (++idx >= N) { idx = 0; }
         return out;
     }
-}; 
+};

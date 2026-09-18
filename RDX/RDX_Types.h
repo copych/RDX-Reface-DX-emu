@@ -10,6 +10,25 @@
 // Enums
 // ---------------------------------
 
+// live update dirty flags
+enum GlobalDirtyFlags : uint8_t {
+    GDIRTY_NONE  = 0,
+    GDIRTY_ALGO  = 1 << 0,
+    GDIRTY_LFO   = 1 << 1,
+    GDIRTY_MOD   = 1 << 2   // peg + pmDepth + enables
+};
+
+enum DirtyFlags : uint8_t {
+    DIRTY_NONE      = 0,
+    DIRTY_FREQ      = 1 << 0,
+    DIRTY_GAIN      = 1 << 1,
+    DIRTY_FEEDBACK  = 1 << 2,
+    DIRTY_ENV       = 1 << 3,
+    DIRTY_SCALING   = 1 << 4,
+    DIRTY_ALL       = 0xFF
+};
+
+
 // Frequency mode
 enum RDX_FreqMode : uint8_t {
     RDX_FREQ_RATIO = 0,
@@ -76,6 +95,9 @@ struct RDX_Controls {
     
     float portaTimeS = 0.06f; // 60ms
 
+    float freqCoef[4]       = {1.0f}; // for ratio/fixed freq modes, for each of 4 ops
+    float detuneCoef[4]     = {1.0f};
+
 	// bank / program
     uint32_t  bankMSB = 0;     // CC#0
     uint32_t  bankLSB = 0;     // CC#32
@@ -90,39 +112,6 @@ struct RDX_Controls {
     ParamPair rpn;
     ParamPair nrpn;
 
-/*
-    std::array<uint8_t, 8> noteStack = {};  
-    uint8_t stackSize = 0;
-
-    inline void pushNote(uint8_t note) {
-        if (stackSize < noteStack.size()) {
-            noteStack[stackSize++] = note;
-        }
-    }
-
-    inline void removeNote(uint8_t note) {
-        for (uint8_t i = 0; i < stackSize; ++i) {
-            if (noteStack[i] == note) {
-                for (uint8_t j = i; j < stackSize - 1; ++j)
-                    noteStack[j] = noteStack[j + 1];
-                --stackSize;
-                break;
-            }
-        }
-    }
-
-    inline uint8_t topNote() const {
-        return stackSize > 0 ? noteStack[stackSize - 1] : 0xFF;
-    }
-
-    inline bool hasNotes() const {
-        return stackSize > 0;
-    }
-
-    inline void clearNoteStack() {
-        stackSize = 0;
-    }
-*/
     // Utility
     inline uint16_t getBank() const {
         return (bankMSB << 7) | bankLSB;
@@ -300,6 +289,7 @@ static inline bool syxToPatch(const uint8_t* syx, uint32_t len, RDX_Patch& patch
         // advance
         while (i < len && syx[i]!=0xF7) i++;
         i++;
+        if (i + 7 + dlen >= len) return false;
     } 
     return true;
 

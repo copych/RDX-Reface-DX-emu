@@ -13,13 +13,19 @@
 
 class  RDX_Voice {
 public:
-    inline void init() {
-    
-        for (auto& op : ops_) {
-            op.reset();
-        }
-        peg_.reset();
-    }
+inline void init() {
+    for (auto& op : ops_) op.reset();
+    peg_.reset();
+
+    gate_ = false;
+    sustained_ = false;
+    active_ = false;
+    justAllocated_ = false;
+    portamentoPos_ = 1.f;
+    portamentoInc_ = 0.f;
+    currentNoteSemitone_ = 0.f;
+    noteOnBaseNote_ = 0.f;
+}
 
 inline void noteOn(uint8_t note, uint8_t vel) {
  //   ctl_.pushNote(note);
@@ -102,6 +108,10 @@ inline void noteOn(uint8_t note, uint8_t vel) {
 }
 
 inline void setJustAllocated() { justAllocated_ = true; }
+
+inline void setAlgorithm(uint8_t a) {
+    algorithm_ = a;
+}
 
 inline void noteOff() {
     gate_ = false;       // key released
@@ -202,7 +212,7 @@ inline IRAM_ATTR __attribute__((always_inline)) void updateMods() {
 
     inline void syncLFO() {
         lfo_.init(patch_.common.lfoSpeed, patch_.common.lfoDelay, (RDX_LFO::Waveform)patch_.common.lfoWave);
-        algorithm_ = patch_.common.algorithm;
+        // algorithm_ = patch_.common.algorithm;
     }
 
 
@@ -337,8 +347,6 @@ inline IRAM_ATTR __attribute__((always_inline)) void updateMods() {
     }
 
     inline void cacheParams() {
- //       ctl_.portaTimeS = patch_.common.portaTime * 0.0037f ; // 71ms at 19, 469ms at 127
-        ctl_.portaTimeS = AM_DEPTH[patch_.common.portaTime] * 2.5f ; // 71ms at 19, 2500ms at 127
         algorithm_          = patch_.common.algorithm;
         pmDepth_            = PM_DEPTH[patch_.common.lfoPMD];
         lfo_.setWaveform((RDX_LFO::Waveform)patch_.common.lfoWave);
@@ -351,6 +359,31 @@ inline IRAM_ATTR __attribute__((always_inline)) void updateMods() {
         }
     }
 
+    inline void updateLfoParams() {
+        lfo_.setWaveform((RDX_LFO::Waveform)patch_.common.lfoWave);
+        lfo_.setRate(patch_.common.lfoSpeed);
+    }
+
+    inline void updateModParams() {
+        pmDepth_ = PM_DEPTH[patch_.common.lfoPMD];
+
+        for (int i = 0; i < 4; ++i) {
+            pegEnable_[i]    = patch_.ops[i].pegEnable;
+            lfoPMDEnable_[i] = patch_.ops[i].lfoPMDEnable;
+            lfoAMD_[i]       = patch_.ops[i].lfoAMD;
+        }
+    }
+
+    inline void applyDirty(int op, uint8_t m) {
+        auto& o = ops_[op];
+
+        if (m & DIRTY_FREQ) o.recalcPhaseInc();
+
+        if (m & DIRTY_SCALING) o.updateScaling();
+        else if (m & DIRTY_GAIN) o.updateGain();
+
+        if (m & DIRTY_FEEDBACK) o.updateFeedback();
+    }
 
     inline void setHeld(bool g) { gate_ = g; }
     inline bool isHeld() const { return gate_; }

@@ -95,8 +95,8 @@
 #ifdef ENABLE_GUI
 
   // only one of SPI and I2C can be set to 1
-  #define OLED_USE_SPI  1 // 7 pins displays
-  #define OLED_USE_I2C  0 // 4 pins displays
+  #define OLED_USE_SPI  0 // 7 pins displays
+  #define OLED_USE_I2C  1 // 4 pins displays
 
   // display signal pins
   #if (OLED_USE_I2C==1)

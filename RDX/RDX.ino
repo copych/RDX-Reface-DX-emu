@@ -1,10 +1,9 @@
 // RDX.ino
 
 #pragma once
-
 #pragma GCC optimize ("O3")
 #pragma GCC optimize ("fast-math")
-#pragma GCC optimize ("unsafe-math-optimizations")
+//#pragma GCC optimize ("unsafe-math-optimizations")
 #pragma GCC optimize ("no-math-errno")
 
 #include <Arduino.h>
@@ -19,8 +18,6 @@ int VOICES = MAX_VOICES;
 #include "RDX_Midi.h"
 #include "src/i2s/i2s_in_out.h"
 #include "RDX_FX.h"
-
-#include "controls.h"
 
 #include <FS.h>
 #include <LittleFS.h>
@@ -56,17 +53,45 @@ static FXHost fx;
     RDX_GUI gui;
 #endif
 
+// controls.h callbacks use fx/gui, so include it after those instances exist.
+#include "controls.h"
+
+
+// ------------------- Output conditioning -----------------------
+// Memoryless soft clipper used before FX.
+// Exactly linear through +/-0.9, then smoothly approaches +/-1.0.
+// The slope is continuous at the knee, so ordinary-level material is untouched.
+static inline IRAM_ATTR __attribute__((always_inline)) float softClipSample(float x) {
+    constexpr float KNEE = 0.9f;
+    constexpr float HEADROOM = 1.0f - KNEE;
+
+    const float ax = fabsf(x);
+    if (ax <= KNEE) return x;
+
+    const float over = ax - KNEE;
+    const float y = KNEE + HEADROOM * over / (HEADROOM + over);
+    return copysignf(y, x);
+}
+
+static inline IRAM_ATTR __attribute__((always_inline)) void softClipBlock(float* left, float* right, uint32_t n) {
+    for (uint32_t i = 0; i < n; ++i) {
+        left[i]  = softClipSample(left[i]);
+        right[i] = softClipSample(right[i]);
+    }
+}
 
 
 // ------------------- Audio Task -----------------------
 static void IRAM_ATTR audioTask(void*) {
-    vTaskDelay(30);
+    vTaskDelay(10);
+        
     ESP_LOGI(TAG, "Starting Audio task");
-    vTaskDelay(50); 
+    vTaskDelay(20); 
     while (true) {
         uint32_t start = micros();
 
-        synth.renderAudioBlock(outL, outR); 
+        synth.renderAudioBlock(outL, outR);
+        softClipBlock(outL, outR, DMA_BUFFER_LEN);
         
         uint32_t end = micros();
 
@@ -85,9 +110,9 @@ static void IRAM_ATTR audioTask(void*) {
 // ------------------- MIDI Task ------------------------
 static void IRAM_ATTR midiTask(void*) {
     const int budgetMicros = 1e+06f * DMA_BUFFER_LEN / SAMPLE_RATE ;
-    vTaskDelay(40);
+    vTaskDelay(20);
     ESP_LOGI(TAG, "Starting MIDI task");
-    vTaskDelay(40);
+    vTaskDelay(20);
     int d = 0;
     while (true) {
         processMidi();   // incoming messages
@@ -96,11 +121,12 @@ static void IRAM_ATTR midiTask(void*) {
         processControls();
         taskYIELD();
         
-        synth.updateCache(); // cache some not-so-critical params to local members to speed up hot paths
+        synth.flushUpdates();    // sync params to local members to speed up hot paths
 
         if (++d % 1024 == 0) {
             midiWM = uxTaskGetStackHighWaterMark(midiTaskHandle);
             audioWM = uxTaskGetStackHighWaterMark(audioTaskHandle);
+            guiWM = uxTaskGetStackHighWaterMark(guiTaskHandle);
             #if 1   // --- diagnostics
                 for (int i = 0; i < DMA_BUFFER_LEN; ++i) {
                     rmsL += outL[i] * outL[i];
@@ -120,9 +146,9 @@ static void IRAM_ATTR midiTask(void*) {
 #ifdef ENABLE_GUI
 // ------------------- GUI Task ------------------------
 static void IRAM_ATTR gui_task(void*) {
-    vTaskDelay(50);
-    ESP_LOGI(TAG, "Starting GUI task");
     vTaskDelay(30);
+    ESP_LOGI(TAG, "Starting GUI task");
+    vTaskDelay(20);
     while (true) {
         gui.draw();
         vTaskDelay(1);
@@ -132,30 +158,45 @@ static void IRAM_ATTR gui_task(void*) {
 
 // ------------------- Setup ---------------------------
 void setup() {
-    Serial.begin(115200);
-    ESP_LOGI(TAG, "RDX Synth setup");
 
+ //   Serial.begin(115200);
+    vTaskDelay(100);
+    ESP_LOGI(TAG, "RDX Synth setup");
 
 // ----------------- Filesystems --------------------
  //   SD_MMC.setPins(SDMMC_CLK, SDMMC_CMD, SDMMC_D0, SDMMC_D1, SDMMC_D2, SDMMC_D3);
  //   if (!SD_MMC.begin()) ESP_LOGE(TAG, "SD init failed");
     if (!LittleFS.begin()) ESP_LOGE(TAG, "LittleFS init failed");
 
-  setupMidi() ;
-  
-  initControls();
+// ----------------- Midi in/out --------------------
+    setupMidi() ;
+    vTaskDelay(800); // USB requires this pause to stabilize
+
+// ----------------- Controls --------------------
+    initControls();
   
 #ifdef ENABLE_GUI
-  gui.begin();
-  gui.push();
+    gui.begin();
+    gui.push();
 #endif
-   
-    // ----------------- Audio -------------------------
+
+
+// ----------------- Audio -------------------------
     audio.setSampleRate(SAMPLE_RATE);
     audio.init(I2S_Audio::MODE_OUT);
+    vTaskDelay(100);
 
-    // ----------------- Synth init ---------------------
+
+// ----------------- Synth init ---------------------
     synth.init(); 
+
+// ----------------- EFFECTS -----------------------
+
+    logMemoryStats("Before FX init");
+    fx.init(SAMPLE_RATE);
+    logMemoryStats("After FX init");
+    fx.setSlot(0, FX_THRU);
+    fx.setSlot(1, FX_THRU);
 
 
     RDX_Patch patch;
@@ -170,28 +211,38 @@ void setup() {
     synth.applyPatch(patch);
 
 
-    // ----------------- EFFECTS -----------------------
-
-    logMemoryStats("Before FX init");
-    fx.init(SAMPLE_RATE);
-    logMemoryStats("After FX init");
-    fx.setSlot(0, FX_THRU);
-    fx.setSlot(1, FX_THRU);
-
-
     // ----------------- Tasks -------------------------
     xTaskCreatePinnedToCore(audioTask, "audio", 4096, nullptr, 8, &audioTaskHandle, 0);
     xTaskCreatePinnedToCore(midiTask, "midi", 4096, nullptr, 5, &midiTaskHandle, 1);
 #ifdef ENABLE_GUI
     xTaskCreatePinnedToCore(gui_task, "gui", 4096, nullptr, 4, &guiTaskHandle, 1);
 #endif
+    vTaskDelay(50);
+    ESP_LOGI("main", "setup complete",0);
 }
 
 // ------------------- Loop ----------------------------
 void loop() {
-    logMemoryStats("After setup()");
-    vTaskDelay(10);
-    vTaskDelete(nullptr); // all tasks run in FreeRTOS 
+  vTaskDelay(25);
+  logMemoryStats("After setup()");
+  char res[800];
+  
+  vTaskDelay(25);
+  vTaskList(res) ;
+  ESP_LOGI("", "\r\n%s\n\n", res);
+
+  heap_caps_print_heap_info( MALLOC_CAP_INTERNAL );
+            
+
+  vTaskDelay(30);
+
+  ESP_LOGI("","LOOP: killing task");
+  taskYIELD();
+
+
+  vTaskDelete(NULL);
 }
+
+
 
 

@@ -29,6 +29,7 @@ enum ParamSel { P_1 = 20, P_2, P_3, P_4};
 ParamSel currentSel = P_1;
 
 
+
 // Create input manager (pass multiplexer pointer)
 InputManager inputManager(nullptr);
 
@@ -54,6 +55,11 @@ void onButton(int id, MuxButton::btnEvents evt) {
             synth.applyPatch(patch);
             ESP_LOGI("CTRL", "%s", patch.common.voiceName);
         }
+#ifdef ENABLE_GUI
+        else if (id == 20) {
+            gui.nextTestPage();
+        }
+#endif
     }
 
 }
@@ -100,3 +106,4 @@ inline void processControls() {
     // Single call to process all inputs (both multiplexed and direct)
     inputManager.process();
 }
+

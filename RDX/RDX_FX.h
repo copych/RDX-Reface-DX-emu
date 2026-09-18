@@ -97,6 +97,7 @@ public:
             if (slots_[s]) slots_[s]->processBlock(left, right, FX_BLOCK_SIZE  );
             fx_time += timing[(FX_ID)common_.effects[s][0]];
         }
+
         if (common_.monoPoly == RDX_MODE_POLY) {
             VOICES = (1e+06f * DMA_BUFFER_LEN / SAMPLE_RATE - 50 - fx_time) / voice_timing; // ~340ms per voice on S3, polyphony estimation; 50ms is a gap
         } else {
@@ -126,6 +127,16 @@ public:
 
     inline FXBase* getSlot(uint8_t slot) { return slots_[slot]; }
 
+    // Temporary tuning access. Prefer the currently active phaser slot;
+    // fall back to slot 0 so the GUI always has a valid object to display.
+    inline FxPhaser* getPhaserForTuning() {
+        for (uint8_t s = 0; s < FX_SLOTS; ++s) {
+            if (fx_[s] == FX_PHASER) return &phaser_[s];
+        }
+        return &phaser_[0];
+    }
+
+
 private:
 
     int szDRAM = 0;
@@ -152,6 +163,7 @@ private:
     int voice_timing = 340;
 
 
+
     inline FXBase* getInstance(FX_ID id, uint8_t slot) {
         switch (id) {
             case FX_THRU:       return &thru_[slot];
@@ -166,3 +178,4 @@ private:
         }
     }
 };
+
