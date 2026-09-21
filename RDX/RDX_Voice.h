@@ -128,21 +128,25 @@ inline void noteOff() {
     sustained_ = false;
 }
 
+template <bool WITH_PORTAMENTO>
 inline IRAM_ATTR __attribute__((always_inline)) void updateMods() {
     float peg_value = peg_.processPEG();
 
-    // --- Portamento ---
-    if (portamentoPos_ < 1.f) {
-        portamentoPos_ += portamentoInc_;
-        if (portamentoPos_ >= 1.f) {
-            portamentoPos_ = 1.f;
-            currentNoteSemitone_ = portamentoTargetNote_;
+    // POLY: noteOn() sets start == target == base note, so offset is zero.
+    // The compile-time branch removes glide arithmetic from every POLY voice.
+    float portaOffsetSemitones = 0.f;
+    if constexpr (WITH_PORTAMENTO) {
+        if (portamentoPos_ < 1.f) {
+            portamentoPos_ += portamentoInc_;
+            if (portamentoPos_ >= 1.f) {
+                portamentoPos_ = 1.f;
+                currentNoteSemitone_ = portamentoTargetNote_;
+            }
         }
+        const float currentNote = portamentoStartNote_ +
+                                  (portamentoTargetNote_ - portamentoStartNote_) * portamentoPos_;
+        portaOffsetSemitones = currentNote - noteOnBaseNote_;
     }
-
-    const float currentNote = portamentoStartNote_ +
-                              (portamentoTargetNote_ - portamentoStartNote_) * portamentoPos_;
-    const float portaOffsetSemitones = currentNote - noteOnBaseNote_;
 
     // --- LFO + mod sources ---
     lfoValue_ += lfoIncrement_;
@@ -155,11 +159,14 @@ inline IRAM_ATTR __attribute__((always_inline)) void updateMods() {
         phaseMod += peg_value * pegEnable_[i];
         phaseMod += pmMult * lfoPMDEnable_[i];
         phaseMod += modWheelLfo;
-        phaseMod_[i] = phaseMod + pitchBend + portaOffsetSemitones;
+        if constexpr (WITH_PORTAMENTO)
+            phaseMod_[i] = phaseMod + pitchBend + portaOffsetSemitones;
+        else
+            phaseMod_[i] = phaseMod + pitchBend;
 
         if (lfoAMD_[i] > 0) {
             ampMod_[i] = 1.0f + AM_DEPTH[lfoAMD_[i]] * (lfoValue_*2.0f - 1.0f) - modWheelLfo;
-            fclamp(ampMod_[i], 0.f, 1.f);
+            ampMod_[i] = fclamp(ampMod_[i], 0.f, 1.f);
         } else {
             ampMod_[i] = 1.0f;
         }
@@ -241,9 +248,10 @@ inline IRAM_ATTR __attribute__((always_inline)) void updateMods() {
     }
 
 
+    template <bool WITH_PORTAMENTO>
     inline IRAM_ATTR __attribute__((always_inline, hot)) float step() {
      //   if (!ops_[0].isActive()) {return 0.0f  ;}
-        updateMods();
+        updateMods<WITH_PORTAMENTO>();
         switch(algorithm_) {
             case 0: // 4->3->2->1
                 return (ampMod_[0] * ops_[0].compute(
@@ -435,4 +443,6 @@ private:
     float               lfoIncrement_ = 0.f;
     float               portaSemitoneOffset_ = 0.0f;
 };
+
+
 

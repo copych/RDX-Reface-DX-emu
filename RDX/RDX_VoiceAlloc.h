@@ -53,14 +53,16 @@ public:
         switch (mode) {
             case RDX_MODE_MONO_FULL:
             case RDX_MODE_MONO_LEGATO:
-                popNote(note);
+                if (!popNote(note)) {
+                    return; // stale NoteOff → ignore
+                }
                 if (stackSize_ == 0) {
                     monoActive_ = false;
                     voices[0].noteOff();
                 } else {
                     // return (glide) to previous note
                     uint8_t prev = stack_[stackSize_ - 1];
-                    voices[0].noteOn(prev, 100);
+                    voices[0].noteOn(prev, voices[0].note());
                 }
                 return;
 
@@ -75,14 +77,10 @@ public:
                         v.setHeld(false);
 
                         if (ctl_.sustain) {
-                            // Pedal down → defer release
                             v.setSustained(true);
                         } else {
-                            // Pedal up → release immediately if not held
-                            if (!v.isHeld()) {
-                                v.setSustained(false);
-                                v.noteOff();
-                            }
+                            v.setSustained(false);
+                            v.noteOff();
                         }
                     }
                 }
@@ -91,6 +89,14 @@ public:
         }
     }
 
+
+    inline void reset() {
+        clearStack();
+        monoActive_ = false;
+        legatoPending_ = false;
+    }
+
+    
     inline void allSoundOff(RDX_Voice* voices, int count) {
         for (int i = 0; i < count; ++i) {
             voices[i].setHeld(false);
@@ -127,6 +133,8 @@ public:
 
     inline void clearStack() {
         stackSize_ = 0;
+        monoActive_ = false;
+        legatoPending_ = false;
     }
     
 private:
@@ -145,15 +153,17 @@ private:
         monoNote_ = note;
     }
 
-    inline void popNote(uint8_t note) {
+    inline bool popNote(uint8_t note) {
         for (int i = 0; i < stackSize_; ++i) {
             if (stack_[i] == note) {
                 for (int j = i; j < stackSize_ - 1; ++j)
                     stack_[j] = stack_[j + 1];
                 --stackSize_;
-                break;
+                return true;
             }
         }
+        return false;
     }
 
 };
+

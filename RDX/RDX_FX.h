@@ -91,17 +91,19 @@ public:
     }
 
     inline IRAM_ATTR __attribute__((always_inline, hot)) void process(float* left, float* right ) {
-        int fx_time = 0;
         for (int s = 0; s < FX_SLOTS; ++s) {
             if (fx_[s] != common_.effects[s][0]) setSlot(s, (FX_ID)common_.effects[s][0]);
-            if (slots_[s]) slots_[s]->processBlock(left, right, FX_BLOCK_SIZE  );
-            fx_time += timing[(FX_ID)common_.effects[s][0]];
+            if (slots_[s]) slots_[s]->processBlock(left, right, FX_BLOCK_SIZE);
         }
+    }
 
-        if (common_.monoPoly == RDX_MODE_POLY) {
-            VOICES = (1e+06f * DMA_BUFFER_LEN / SAMPLE_RATE - 50 - fx_time) / voice_timing; // ~340ms per voice on S3, polyphony estimation; 50ms is a gap
-        } else {
-            VOICES = 1;
+
+    // Control-side synchronization used by the silent program-change handoff.
+    // Must only be called while Core0 is bypassing FX processing.
+    inline void syncPatch() {
+        for (uint8_t s = 0; s < FX_SLOTS; ++s) {
+            const FX_ID wanted = (FX_ID)common_.effects[s][0];
+            if (fx_[s] != wanted) setSlot(s, wanted);
         }
     }
 
@@ -178,4 +180,5 @@ private:
         }
     }
 };
+
 
